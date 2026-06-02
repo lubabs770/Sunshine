@@ -90,7 +90,7 @@ YAZI_FLAVORS_MAP=(
   [nord]="nord"              [tokyo]="tokyo-night"
   [gruvbox]="gruvbox-dark"   [rose]="rose-pine"
   [catppuccin]="catppuccin-frappe" [kanagawa]=""
-  [everforest]="everforest-dark"
+  [everforest]="everforest-medium"
 )
 NEOFETCH_COLORS=(
   [nord]="6 4 6 4 4 6"       [tokyo]="4 5 4 6 4 5"
@@ -235,7 +235,8 @@ apply_borders() {
 # ── apply: simple-bar ─────────────────────────────────────────────────────────
 
 apply_simplebar() {
-  pgrep -x Übersicht &>/dev/null || { warn "simple-bar — Übersicht not running"; return; }
+  osascript -e 'tell application "Übersicht" to true' &>/dev/null \
+    || { warn "simple-bar — Übersicht not running"; return; }
 
   local db
   db=$(find "$SB_WEBKIT_ROOT" -name "localstorage.sqlite3" 2>/dev/null | while read -r f; do
@@ -298,8 +299,15 @@ apply_zed() {
 
 apply_iterm() {
   local preset="${ITERM_PRESETS[$KEY]}"
-  defaults read com.googlecode.iterm2 "Custom Color Presets" 2>/dev/null \
-    | grep -q "\"$preset\"" || { warn "iTerm2 — preset '$preset' not imported"; return; }
+  (ITERM_CHECK_PRESET="$preset" python3 <<'PYEOF'
+import subprocess, plistlib, unicodedata, os, sys
+name = unicodedata.normalize('NFC', os.environ['ITERM_CHECK_PRESET'])
+r = subprocess.run(['defaults','export','com.googlecode.iterm2','-'], capture_output=True)
+prefs = plistlib.loads(r.stdout)
+presets = prefs.get('Custom Color Presets', {})
+sys.exit(0 if any(unicodedata.normalize('NFC', k) == name for k in presets) else 1)
+PYEOF
+  ) 2>/dev/null || { warn "iTerm2 — preset '$preset' not imported"; return; }
   osascript 2>/dev/null <<EOF || { warn "iTerm2 — not running or no active window"; return; }
 tell application "iTerm2"
   tell current session of current window
