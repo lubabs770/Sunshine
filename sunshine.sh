@@ -17,6 +17,8 @@ BTOP_CONF="$HOME/.config/btop/btop.conf"
 BTOP_THEMES_DIR="$HOME/.config/btop/themes"
 NEOFETCH_CONF="$HOME/.config/neofetch/config.conf"
 BORDERS_COLOR_FILE="$HOME/.config/borders/active_color"
+ALACRITTY_CONF="$HOME/.config/alacritty/alacritty.toml"
+ALACRITTY_THEMES_DIR="$HOME/.config/alacritty/themes"
 SB_WEBKIT_ROOT="$HOME/Library/WebKit/tracesOf.Uebersicht"
 SUNSHINE_STATE="$HOME/.config/sunshine-theme"
 
@@ -33,6 +35,7 @@ fi
 declare -A LABELS ACCENTS BORDER_COLORS SIMPLEBAR_THEMES
 declare -A VSCODE_EXT_PREFIXES VSCODE_THEMES ZED_THEMES ITERM_PRESETS
 declare -A NVIM_SCHEMES YAZI_FLAVORS_MAP NEOFETCH_COLORS BTOP_THEMES_MAP WALLPAPER_PREFIXES
+declare -A ALACRITTY_THEMES
 
 LABELS=(
   [nord]="Nord"              [tokyo]="Tokyo Night"
@@ -109,6 +112,12 @@ WALLPAPER_PREFIXES=(
   [gruvbox]="gruvbox-"   [rose]="rose-pine-"
   [catppuccin]="catppuccin-" [kanagawa]="kanagawa-"
   [everforest]="everforest-"
+)
+ALACRITTY_THEMES=(
+  [nord]="nord"                  [tokyo]="tokyo_night"
+  [gruvbox]="gruvbox_dark"       [rose]="rose_pine"
+  [catppuccin]="catppuccin_frappe" [kanagawa]="kanagawa_wave"
+  [everforest]="everforest_dark"
 )
 
 # ── output helpers ────────────────────────────────────────────────────────────
@@ -310,9 +319,13 @@ PYEOF
   ) 2>/dev/null || { warn "iTerm2 — preset '$preset' not imported"; return; }
   osascript 2>/dev/null <<EOF || { warn "iTerm2 — not running or no active window"; return; }
 tell application "iTerm2"
-  tell current session of current window
-    set color preset to "$preset"
-  end tell
+  repeat with w in windows
+    repeat with t in tabs of w
+      repeat with s in sessions of t
+        tell s to set color preset to "$preset"
+      end repeat
+    end repeat
+  end repeat
 end tell
 EOF
   ok "iTerm2"
@@ -372,6 +385,66 @@ apply_btop() {
   ok "btop"
 }
 
+# ── apply: alacritty ──────────────────────────────────────────────────────────
+
+apply_alacritty() {
+  local theme="${ALACRITTY_THEMES[$KEY]}"
+  local theme_path="$ALACRITTY_THEMES_DIR/$theme.toml"
+  local current="$ALACRITTY_THEMES_DIR/current.toml"
+  [ -f "$theme_path" ] || {
+    warn "alacritty — theme '$theme.toml' not in $ALACRITTY_THEMES_DIR"; return
+  }
+  # alacritty.toml always imports current.toml (stable path — never changes after first run)
+  if [ ! -f "$ALACRITTY_CONF" ]; then
+    mkdir -p "$(dirname "$ALACRITTY_CONF")"
+    printf '[general]\nimport = ["%s"]\n' "$current" > "$ALACRITTY_CONF"
+  else
+    python3 - "$ALACRITTY_CONF" "$current" <<'PYEOF'
+import re, sys
+conf, current = sys.argv[1], sys.argv[2]
+with open(conf) as f:
+    content = f.read()
+new_line = f'import = ["{current}"]'
+lines = content.splitlines(keepends=True)
+new_lines = []
+in_general = False
+import_written = False
+for line in lines:
+    stripped = line.strip()
+    if stripped.startswith('['):
+        in_general = (stripped == '[general]')
+    if in_general and re.match(r'^\s*import\s*=\s*\[', line):
+        new_lines.append(new_line + '\n')
+        import_written = True
+    elif not in_general and re.match(r'^import\s*=\s*\[', line):
+        pass  # migrate old top-level import
+    else:
+        new_lines.append(line)
+result = ''.join(new_lines)
+if not import_written:
+    if '[general]' in result:
+        result = re.sub(r'(\[general\]\n?)', f'\\1{new_line}\n', result, count=1)
+    else:
+        result = f'[general]\n{new_line}\n\n' + result.lstrip()
+with open(conf, 'w') as f:
+    f.write(result)
+PYEOF
+  fi
+  # Write theme into current.toml in-place (preserves inode → all open windows hot-reload)
+  python3 - "$theme_path" "$current" <<'PYEOF'
+import sys
+with open(sys.argv[1]) as src:
+    content = src.read()
+try:
+    with open(sys.argv[2], 'r+') as f:
+        f.seek(0); f.write(content); f.truncate()
+except FileNotFoundError:
+    with open(sys.argv[2], 'w') as f:
+        f.write(content)
+PYEOF
+  ok "alacritty"
+}
+
 # ── apply: wallpaper ──────────────────────────────────────────────────────────
 
 apply_wallpaper() {
@@ -416,6 +489,7 @@ apply_nvim
 apply_yazi
 apply_neofetch
 apply_btop
+apply_alacritty
 apply_wallpaper
 
 echo ""
