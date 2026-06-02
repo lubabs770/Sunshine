@@ -92,7 +92,7 @@ NVIM_SCHEMES=(
 YAZI_FLAVORS_MAP=(
   [nord]="nord"              [tokyo]="tokyo-night"
   [gruvbox]="gruvbox-dark"   [rose]="rose-pine"
-  [catppuccin]="catppuccin-frappe" [kanagawa]=""
+  [catppuccin]="catppuccin-frappe" [kanagawa]="kanagawa"
   [everforest]="everforest-medium"
 )
 NEOFETCH_COLORS=(
@@ -104,7 +104,7 @@ NEOFETCH_COLORS=(
 BTOP_THEMES_MAP=(
   [nord]="Nord"                  [tokyo]="tokyo-night"
   [gruvbox]="gruvbox"            [rose]="rose-pine"
-  [catppuccin]="catppuccin-frappe" [kanagawa]=""
+  [catppuccin]="catppuccin-frappe" [kanagawa]="kanagawa"
   [everforest]="everforest"
 )
 WALLPAPER_PREFIXES=(
