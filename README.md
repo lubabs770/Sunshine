@@ -15,6 +15,7 @@ all in a single shell script
 -  yazi
 -  wallpapers (WIP)
 -  simplebar/Uberschicht
+-  borders (jankyborders)
 
 
 
