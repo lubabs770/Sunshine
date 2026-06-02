@@ -17,6 +17,7 @@ https://github.com/user-attachments/assets/58664a8f-cbc7-484d-b764-6ba92ec4433b
 - zed
 - lazyvim
 - iterm2
+- alacritty
 - btop
 -  neofetch
 -  yazi
@@ -31,6 +32,7 @@ https://github.com/user-attachments/assets/58664a8f-cbc7-484d-b764-6ba92ec4433b
   - chrome theme extensions
   - firefox theme extensions
   - fix up wallpapers
+  - fix up simplebar/Uberschicht
   - nerdfonts
 
 ## usage:
