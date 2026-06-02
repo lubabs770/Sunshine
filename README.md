@@ -23,3 +23,8 @@ all in a single shell script
   - chrome theme extensions
   - firefox theme extensions
   - fix up wallpapers
+  - nerdfonts
+
+## usage:
+
+run and done!
